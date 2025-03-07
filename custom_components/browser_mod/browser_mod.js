@@ -248,6 +248,7 @@ const e="undefined"!=typeof globalThis&&globalThis||"undefined"!=typeof self&&se
         .hass=${this.hass}
         .data=${this._config}
         .schema=${Be}
+        .schema=${We}
         .computeLabel=${e=>{var t;return null!==(t=e.label)&&void 0!==t?t:e.name}}
         @value-changed=${this._configChanged}
       ></ha-form>
