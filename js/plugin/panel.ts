@@ -67,13 +67,14 @@ export const PanelStateMixin = (SuperClass) => {
     _panelTitle(panel) {
       if (panel?.hass?.localize) {
         const translationKey = this._getPanelNameTranslationKey(panel.panel);
-        return panel.hass.localize(translationKey) || panel.panel?.title || "unavailable";
+        return panel.hass.localize(translationKey) || panel.panel?.title || "";
       }
-      return panel?.panel?.title || "unavailable";
+      return panel?.panel?.title || "";
     }
 
     _panelAttributes(panel) {
       return {
+        panelTitle: this._panelTitle(panel),
         panelUrlPath: panel?.panel?.url_path || "",
         panelComponentName: panel?.panel?.component_name || "",
         panelIcon: panel?.panel?.icon || "",
@@ -102,18 +103,16 @@ export const PanelStateMixin = (SuperClass) => {
       const update = async () => {
         isUpdating = true;
         const panel = await this._getPanel(document);
-        const title = this._panelTitle(panel);
         const panelAttributes = this._panelAttributes(panel);
         const viewAttributes = await this._viewAttributes(panel);
-        const fullTitle = title + (viewAttributes.viewTitle ? ` - ${viewAttributes.viewTitle}` : "");
+        const fullTitle = panelAttributes.panelTitle + (viewAttributes.viewTitle ? ` - ${viewAttributes.viewTitle}` : "");
         const fullUrlPath = panelAttributes.panelUrlPath + (viewAttributes.viewUrlPath ? `/${viewAttributes.viewUrlPath}` : "");
         this.sendUpdate({
           panel: {
-            title: title,
+            title: fullTitle,
             attributes: {
               ...panelAttributes,
               ...viewAttributes,
-              fullTitle: fullTitle,
               fullUrlPath: fullUrlPath,
             }
           }
