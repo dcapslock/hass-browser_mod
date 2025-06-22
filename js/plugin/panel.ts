@@ -114,6 +114,7 @@ export const PanelStateMixin = (SuperClass) => {
               ...panelAttributes,
               ...viewAttributes,
               fullUrlPath: fullUrlPath,
+              popupOpen: window.browser_mod?._popupEl?.open || false,
             }
           }
         });
