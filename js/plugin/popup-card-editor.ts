@@ -5,9 +5,9 @@ import { ObjectSelectorMonitor } from "../object-selector-monitor";
 
 const configSchema = [
   {
-    name: "entity",
-    label: "Entity",
-    selector: { entity: {} },
+    name: "target",
+    label: "Target",
+    selector: { target: {} },
   },
   {
     name: "title",
@@ -183,6 +183,16 @@ class PopupCardEditor extends LitElement {
 
   setConfig(config) {
     this._config = config;
+    if (this._config.entity) {
+      this._config.target = {
+        entity_id: this._config.entity,
+        ...this._config.target,
+      };
+      delete this._config.entity;
+      this.dispatchEvent(
+        new CustomEvent("config-changed", { detail: { config: this._config } })
+      );
+    }
   }
 
   connectedCallback() {

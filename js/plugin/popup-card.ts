@@ -188,15 +188,42 @@ class PopupCard extends LitElement {
   }
 }
 
-function popupCardMatch(card, entity, viewIndex, curView) {
-  return card.type === 'custom:popup-card' &&
-         card.entity === entity &&
-         (viewIndex === curView || card.popup_card_all_views);
+function popupCardMatch(hass, card, entity, viewIndex, curView) {
+  const entityConfig = hass.entities?.[entity];
+  var targetEntityIDs = card.target?.entity_id || [ card.entity ];
+  if (!Array.isArray(targetEntityIDs)) {
+    targetEntityIDs = [targetEntityIDs];
+  }
+  var targetAreaIDs = card.target?.area_id || [];
+  if (!Array.isArray(targetAreaIDs)) {
+    targetAreaIDs = [targetAreaIDs]; 
+  }
+  var targetLabelIDs = card.target?.label_id || [];
+  if (!Array.isArray(targetLabelIDs)) {
+    targetLabelIDs = [targetLabelIDs];
+  }
+  var targetDeviceIDs = card.target?.device_id || [];
+  if (!Array.isArray(targetDeviceIDs)) {
+    targetDeviceIDs = [targetDeviceIDs];
+  }
+  return (
+          card.type === 'custom:popup-card'
+         ) &&
+         (
+          (targetEntityIDs.includes(entity)) ||
+          (entityConfig?.area_id && targetAreaIDs?.includes(entityConfig?.area_id)) ||
+          (targetLabelIDs.some((l: string) => entityConfig?.labels?.includes(l))) ||
+          (entityConfig?.device_id && targetAreaIDs?.includes(entityConfig?.device_id))
+         ) &&
+         (
+          viewIndex === curView || card.popup_card_all_views
+        );
 }
 
 function findPopupCardConfig(lovelaceRoot, entity) {
   const lovelaceConfig = lovelaceRoot?.lovelace?.config;
-  if (lovelaceConfig) {
+  const hass = lovelaceRoot?.hass;
+  if (lovelaceConfig && hass) {
     const curView = lovelaceRoot?._curView ?? 0;
     // Place current view at the front of the view index lookup array.
     // This allows the current view to be checked first for local cards, 
@@ -208,11 +235,11 @@ function findPopupCardConfig(lovelaceRoot, entity) {
       const view = lovelaceConfig.views[viewIndex];
       if (view.cards) {
         for (const card of view.cards) {
-          if (popupCardMatch(card, entity, viewIndex, curView)) return card;
+          if (popupCardMatch(hass, card, entity, viewIndex, curView)) return card;
           // Allow for card one level deep. This allows for a sub card in a panel dashboard for example.
           if (card.cards) {
             for (const subCard of card.cards) {
-              if (popupCardMatch(subCard, entity, viewIndex, curView)) return subCard;
+              if (popupCardMatch(hass, subCard, entity, viewIndex, curView)) return subCard;
             }
           }
         }
@@ -221,11 +248,11 @@ function findPopupCardConfig(lovelaceRoot, entity) {
         for (const section of view.sections) {
           if (section.cards) {
             for (const card of section.cards) {
-              if (popupCardMatch(card, entity, viewIndex, curView)) return card;
+              if (popupCardMatch(hass, card, entity, viewIndex, curView)) return card;
               // Allow for card one level deep. This allows for a sub card in a panel dashboard for example.
               if (card.cards) {
                 for (const subCard of card.cards) {
-                  if (popupCardMatch(subCard, entity, viewIndex, curView)) return subCard;
+                  if (popupCardMatch(hass, subCard, entity, viewIndex, curView)) return subCard;
                 }
               }
             }
