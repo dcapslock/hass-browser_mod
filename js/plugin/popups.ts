@@ -9,7 +9,7 @@ import {
   hass_base_el,
   selectTree,
   getMoreInfoDialog,
-  getMoreInfoDialogHADialog,
+  getMoreInfoDialogHADialog
 } from "../helpers";
 import { loadHaForm } from "../helpers";
 import { ObjectSelectorMonitor } from "../object-selector-monitor";
