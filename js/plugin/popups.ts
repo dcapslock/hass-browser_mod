@@ -10,8 +10,6 @@ import {
   selectTree,
   getMoreInfoDialog,
   getMoreInfoDialogHADialog,
-  getLovelaceRoot,
-  findPopupCardConfig
 } from "../helpers";
 import { loadHaForm } from "../helpers";
 import { ObjectSelectorMonitor } from "../object-selector-monitor";

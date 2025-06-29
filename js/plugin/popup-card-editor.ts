@@ -188,6 +188,7 @@ class PopupCardEditor extends LitElement {
         entity_id: this._config.entity,
         ...this._config.target,
       };
+      delete this._config.entity;
       this.dispatchEvent(
         new CustomEvent("config-changed", { detail: { config: this._config } })
       );
