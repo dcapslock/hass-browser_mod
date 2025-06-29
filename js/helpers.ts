@@ -282,3 +282,99 @@ export const debounce = <T extends any[]>(
   };
   return debouncedFunc;
 };
+
+function popupCardMatch(hass, card, target, viewIndex, curView) {
+  // Resolve target IDs
+  var targetEntityIDs = target?.entity_id || [];
+  if (!Array.isArray(targetEntityIDs)) {
+    targetEntityIDs = [targetEntityIDs];
+  }
+  var targetAreaIDs = target?.area_id || [];
+  if (!Array.isArray(targetAreaIDs)) {
+    targetAreaIDs = [targetAreaIDs];
+  }
+  var targetLabelIDs = target?.label_id || [];
+  if (!Array.isArray(targetLabelIDs)) {
+    targetLabelIDs = [targetLabelIDs];
+  }
+  var targetDeviceIDs = target?.device_id || [];
+  if (!Array.isArray(targetDeviceIDs)) {
+    targetDeviceIDs = [targetDeviceIDs];
+  }
+  // Resolve card IDs
+  var cardEntityIDs = card.target?.entity_id || [ card.entity ];
+  if (!Array.isArray(cardEntityIDs)) {
+    cardEntityIDs = [cardEntityIDs];
+  }
+  var cardAreaIDs = card.target?.area_id || [];
+  if (!Array.isArray(cardAreaIDs)) {
+    cardAreaIDs = [cardAreaIDs]; 
+  }
+  var cardLabelIDs = card.target?.label_id || [];
+  if (!Array.isArray(cardLabelIDs)) {
+    cardLabelIDs = [cardLabelIDs];
+  }
+  var cardDeviceIDs = card.target?.device_id || [];
+  if (!Array.isArray(cardDeviceIDs)) {
+    cardDeviceIDs = [cardDeviceIDs];
+  }
+  // return match if card is a popup-card and matches the target
+  return  (
+            card.type === 'custom:popup-card'
+          ) 
+          &&
+          (
+            cardEntityIDs.some((e: string) => targetEntityIDs.includes(e))  ||
+            cardAreaIDs.some((a: string) => targetAreaIDs.includes(a))      ||
+            cardLabelIDs.some((l: string) => targetLabelIDs.includes(l))    ||
+            cardDeviceIDs.some((d: string) => targetDeviceIDs.includes(d))
+          )
+          &&
+          (
+            viewIndex === curView || card.popup_card_all_views
+          );
+}
+
+export function findPopupCardConfig(lovelaceRoot, target) {
+  const lovelaceConfig = lovelaceRoot?.lovelace?.config;
+  const hass = lovelaceRoot?.hass;
+  if (lovelaceConfig && hass) {
+    const curView = lovelaceRoot?._curView ?? 0;
+    // Place current view at the front of the view index lookup array.
+    // This allows the current view to be checked first for local cards, 
+    // and then the rest of the views for global cards, keeping current view precedence.
+    let viewLookup = Array.from(Array(lovelaceConfig.views.length).keys())
+    viewLookup.splice(curView, 1);
+    viewLookup.unshift(curView);
+    for (const viewIndex of viewLookup) {
+      const view = lovelaceConfig.views[viewIndex];
+      if (view.cards) {
+        for (const card of view.cards) {
+          if (popupCardMatch(hass, card, target, viewIndex, curView)) return card;
+          // Allow for card one level deep. This allows for a sub card in a panel dashboard for example.
+          if (card.cards) {
+            for (const subCard of card.cards) {
+              if (popupCardMatch(hass, subCard, target, viewIndex, curView)) return subCard;
+            }
+          }
+        }
+      }
+      if (view.sections) {
+        for (const section of view.sections) {
+          if (section.cards) {
+            for (const card of section.cards) {
+              if (popupCardMatch(hass, card, target, viewIndex, curView)) return card;
+              // Allow for card one level deep. This allows for a sub card in a panel dashboard for example.
+              if (card.cards) {
+                for (const subCard of card.cards) {
+                  if (popupCardMatch(hass, subCard, target, viewIndex, curView)) return subCard;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return null;
+}

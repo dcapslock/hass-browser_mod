@@ -2,7 +2,7 @@ import { LitElement, html, css } from "lit";
 import { property, state } from "lit/decorators.js";
 
 import "./popup-card-editor";
-import { getLovelaceRoot, hass_base_el } from "../helpers";
+import { getLovelaceRoot, findPopupCardConfig } from "../helpers";
 import { repeat } from "lit/directives/repeat.js";
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { icon } from "./types";
@@ -188,82 +188,6 @@ class PopupCard extends LitElement {
   }
 }
 
-function popupCardMatch(hass, card, entity, viewIndex, curView) {
-  const entityConfig = hass.entities?.[entity];
-  var targetEntityIDs = card.target?.entity_id || [ card.entity ];
-  if (!Array.isArray(targetEntityIDs)) {
-    targetEntityIDs = [targetEntityIDs];
-  }
-  var targetAreaIDs = card.target?.area_id || [];
-  if (!Array.isArray(targetAreaIDs)) {
-    targetAreaIDs = [targetAreaIDs]; 
-  }
-  var targetLabelIDs = card.target?.label_id || [];
-  if (!Array.isArray(targetLabelIDs)) {
-    targetLabelIDs = [targetLabelIDs];
-  }
-  var targetDeviceIDs = card.target?.device_id || [];
-  if (!Array.isArray(targetDeviceIDs)) {
-    targetDeviceIDs = [targetDeviceIDs];
-  }
-  return (
-          card.type === 'custom:popup-card'
-         ) &&
-         (
-          (targetEntityIDs.includes(entity)) ||
-          (entityConfig?.area_id && targetAreaIDs?.includes(entityConfig?.area_id)) ||
-          (targetLabelIDs.some((l: string) => entityConfig?.labels?.includes(l))) ||
-          (entityConfig?.device_id && targetAreaIDs?.includes(entityConfig?.device_id))
-         ) &&
-         (
-          viewIndex === curView || card.popup_card_all_views
-        );
-}
-
-function findPopupCardConfig(lovelaceRoot, entity) {
-  const lovelaceConfig = lovelaceRoot?.lovelace?.config;
-  const hass = lovelaceRoot?.hass;
-  if (lovelaceConfig && hass) {
-    const curView = lovelaceRoot?._curView ?? 0;
-    // Place current view at the front of the view index lookup array.
-    // This allows the current view to be checked first for local cards, 
-    // and then the rest of the views for global cards, keeping current view precedence.
-    let viewLookup = Array.from(Array(lovelaceConfig.views.length).keys())
-    viewLookup.splice(curView, 1);
-    viewLookup.unshift(curView);
-    for (const viewIndex of viewLookup) {
-      const view = lovelaceConfig.views[viewIndex];
-      if (view.cards) {
-        for (const card of view.cards) {
-          if (popupCardMatch(hass, card, entity, viewIndex, curView)) return card;
-          // Allow for card one level deep. This allows for a sub card in a panel dashboard for example.
-          if (card.cards) {
-            for (const subCard of card.cards) {
-              if (popupCardMatch(hass, subCard, entity, viewIndex, curView)) return subCard;
-            }
-          }
-        }
-      }
-      if (view.sections) {
-        for (const section of view.sections) {
-          if (section.cards) {
-            for (const card of section.cards) {
-              if (popupCardMatch(hass, card, entity, viewIndex, curView)) return card;
-              // Allow for card one level deep. This allows for a sub card in a panel dashboard for example.
-              if (card.cards) {
-                for (const subCard of card.cards) {
-                  if (popupCardMatch(hass, subCard, entity, viewIndex, curView)) return subCard;
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  return null;
-}
-
 window.addEventListener("browser-mod-bootstrap", async (ev: CustomEvent) =>  {
   ev.stopPropagation();
   while (!window.browser_mod) {
@@ -308,7 +232,7 @@ window.addEventListener("browser-mod-bootstrap", async (ev: CustomEvent) =>  {
 
   window.addEventListener("hass-more-info", (ev: CustomEvent) => {
     if (ev.detail?.ignore_popup_card || !ev.detail?.entityId || !lovelaceRoot) return;
-    const cardConfig = findPopupCardConfig(lovelaceRoot, ev.detail?.entityId);
+    const cardConfig = findPopupCardConfig(lovelaceRoot, { entity_id: ev.detail?.entityId });
     if (cardConfig) {
       ev.stopPropagation();
       ev.preventDefault();
