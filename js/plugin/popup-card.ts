@@ -231,8 +231,12 @@ window.addEventListener("browser-mod-bootstrap", async (ev: CustomEvent) =>  {
   );
 
   window.addEventListener("hass-more-info", (ev: CustomEvent) => {
-    if (ev.detail?.ignore_popup_card || !ev.detail?.entityId || !lovelaceRoot) return;
-    const cardConfig = findPopupCardConfig(lovelaceRoot, { entity_id: ev.detail?.entityId });
+    if (  ev.detail?.ignore_popup_card || 
+          (!ev.detail?.entityId && !ev.detail?.target) || 
+          !lovelaceRoot
+        ) return;
+    const target = ev.detail?.target || { entity_id: ev.detail?.entityId };
+    const cardConfig = findPopupCardConfig(lovelaceRoot, target);
     if (cardConfig) {
       ev.stopPropagation();
       ev.preventDefault();
