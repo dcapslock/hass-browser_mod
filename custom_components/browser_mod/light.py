@@ -1,7 +1,7 @@
 from homeassistant.components.light import LightEntity, ColorMode
 
 from .entities import BrowserModEntity
-from .const import DOMAIN, DATA_ADDERS
+from .const import DOMAIN, DATA_ADDERS, SCREEN_MIN_KELVIN, SCREEN_MAX_KELVIN
 
 
 async def async_setup_platform(
@@ -19,6 +19,8 @@ class BrowserModLight(BrowserModEntity, LightEntity):
         BrowserModEntity.__init__(self, coordinator, browserID, "Screen")
         LightEntity.__init__(self)
         self.browser = browser
+        self._attr_min_color_temp_kelvin = SCREEN_MIN_KELVIN
+        self._attr_max_color_temp_kelvin = SCREEN_MAX_KELVIN
 
     @property
     def entity_registry_visible_default(self):
@@ -30,15 +32,19 @@ class BrowserModLight(BrowserModEntity, LightEntity):
 
     @property
     def supported_color_modes(self):
-        return {ColorMode.BRIGHTNESS}
+        return {ColorMode.COLOR_TEMP} if not self._data.get("fullyKiosk", False) else {ColorMode.BRIGHTNESS}
 
     @property
     def color_mode(self):
-        return ColorMode.BRIGHTNESS
+        return ColorMode.COLOR_TEMP if not self._data.get("fullyKiosk", False) else ColorMode.BRIGHTNESS
 
     @property
     def brightness(self):
         return self._data.get("screen_brightness", 1)
+    
+    @property
+    def color_temp_kelvin(self) -> int | None:
+        return self._data.get("screen_color_temp_kelvin", 6500)
 
     async def async_turn_on(self, **kwargs):
         await self.browser.send("screen_on", **kwargs)

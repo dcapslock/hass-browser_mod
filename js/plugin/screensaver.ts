@@ -1,9 +1,12 @@
+import { KtoHSL } from "../helpers";
+
 const SCREEN_STATE_ID = "browser_mod-screen_state";
 export const ScreenSaverMixin = (SuperClass) => {
   class ScreenSaverMixinClass extends SuperClass {
     private _panel;
     private _listeners = {};
     private _brightness = 255;
+    private _screen_color_temp_kelvin = 6500;
     private _screen_state;
 
     constructor() {
@@ -18,7 +21,7 @@ export const ScreenSaverMixin = (SuperClass) => {
       panel.shadowRoot.append(styleEl);
       styleEl.innerHTML = `
         :host {
-          background: rgba(0,0,0, var(--darkness));
+          background: hsl(var(--hue) var(--saturation) var(--lightness) / var(--darkness));
           position: fixed;
           left: 0;
           top: 0;
@@ -46,12 +49,13 @@ export const ScreenSaverMixin = (SuperClass) => {
     send_screen_status() {
       this._screen_state = !this._panel.hasAttribute("dark");
       let screen_brightness = this._brightness;
+      let screen_color_temp_kelvin = this._screen_color_temp_kelvin;
       if (this.fully) {
         this._screen_state = this.fully_screen;
         screen_brightness = this.fully_brightness;
       }
 
-      this.sendUpdate({ screen_on: this._screen_state, screen_brightness });
+      this.sendUpdate({ screen_on: this._screen_state, screen_brightness, screen_color_temp_kelvin });
     }
 
     private _screen_save_state() {
@@ -109,13 +113,16 @@ export const ScreenSaverMixin = (SuperClass) => {
           this.fully_brightness = ev.detail.brightness;
         }
       } else {
-        if (ev?.detail?.brightness) {
-          this._brightness = ev.detail.brightness;
-          this._panel.style.setProperty(
-            "--darkness",
-            1 - ev.detail.brightness / 255
-          );
-        }
+        this._brightness = ev?.detail?.brightness ?? this._brightness;
+        this._screen_color_temp_kelvin = ev?.detail.color_temp_kelvin ?? this._screen_color_temp_kelvin;
+        const {h, s, l} = KtoHSL(this._screen_color_temp_kelvin);
+        //l = l * (1 - this._brightness/ 255)
+        this._panel.style.setProperty(
+          "--darkness",
+          1 - this._brightness / 255);
+        this._panel.style.setProperty("--hue", `${h * 360.0}`);
+        this._panel.style.setProperty("--saturation", `${s * 100.0}%`);
+        this._panel.style.setProperty("--lightness", `${l * this._brightness/ 255 * 100.0}%`);
         this._panel.removeAttribute("dark");
       }
       this.send_screen_status();

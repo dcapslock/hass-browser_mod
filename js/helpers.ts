@@ -288,3 +288,104 @@ export const debounce = <T extends any[]>(
   };
   return debouncedFunc;
 };
+
+export function KtoHSL(kelvin) {
+  return rgbToHsl(KToRGB(kelvin))
+
+  // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
+  function KToRGB(Temperature){
+    let Red, Green, Blue;
+
+    Temperature = Temperature / 100;
+
+    if (Temperature <= 66){
+      Red = 255;
+    } else {
+      Red = Temperature - 60;
+      Red = 329.698727466 * Math.pow(Red, -0.1332047592);
+      if (Red < 0){
+        Red = 0;
+      }
+      if (Red > 255){
+        Red = 255;
+      }
+    }
+
+    if (Temperature <= 66){
+      Green = Temperature;
+      Green = 99.4708025861 * Math.log(Green) - 161.1195681661;
+      if (Green < 0 ) {
+        Green = 0;
+      }
+      if (Green > 255) {
+        Green = 255;
+      }
+    } else {
+      Green = Temperature - 60;
+      Green = 288.1221695283 * Math.pow(Green, -0.0755148492);
+      if (Green < 0 ) {
+        Green = 0;
+      }
+      if (Green > 255) {
+        Green = 255;
+      }
+    }
+
+    if (Temperature >= 66){
+      Blue = 255;
+    } else {
+      if (Temperature <= 19){
+        Blue = 0;
+      } else {
+        Blue = Temperature - 10;
+        Blue = 138.5177312231 * Math.log(Blue) - 305.0447927307;
+        if (Blue < 0){
+          Blue = 0;
+        }
+        if (Blue > 255){
+          Blue = 255;
+        }
+      }
+    }
+
+    const rgb = {r: Math.round(Red), g: Math.round(Green), b: Math.round(Blue)};
+    return rgb;
+  }
+
+  /**
+   * SOURCE: https://gist.github.com/mjackson/5311256
+   * Converts an RGB color value to HSL. Conversion formula
+   * adapted from http://en.wikipedia.org/wiki/HSL_color_space.
+   * Assumes r, g, and b are contained in the set [0, 255] and
+   * returns h, s, and l in the set [0, 1].
+   *
+   * @param   Number  r       The red color value
+   * @param   Number  g       The green color value
+   * @param   Number  b       The blue color value
+   * @return  Array           The HSL representation
+   */
+
+  function rgbToHsl(a:{r, g, b}) {
+    let r = a.r / 255, g = a.g / 255, b = a.b / 255;
+
+    var max = Math.max(r, g, b), min = Math.min(r, g, b);
+    var h, s, l = (max + min) / 2;
+
+    if (max == min) {
+      h = s = 0; // achromatic
+    } else {
+      var d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+
+      h /= 6;
+    }
+
+    return { h: h, s: s, l: l };
+  }
+}
