@@ -1,0 +1,7 @@
+{
+  "plugins": [
+    "@babel/plugin-transform-logical-assignment-operators",
+    "@babel/plugin-transform-nullish-coalescing-operator",
+    "@babel/plugin-transform-optional-chaining"
+  ]
+}

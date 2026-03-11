@@ -17,7 +17,17 @@ export default [
       nodeResolve(),
       json(),
       typescript(),
-      babel({ babelHelpers: 'bundled', exclude: "node_modules/**" }),
+      babel({ 
+        babelHelpers: 'bundled', 
+        include:  [ 
+          'src/**', 
+          'node_modules/lit/**',
+          'node_modules/lit-element/**',
+          'node_modules/lit-html/**', 
+          'node_modules/@lit/**', 
+          'node_modules/@lit-labs/**' 
+        ],
+      }),
       !dev && terser({ format: { comments: false } }),
     ],
   },
@@ -31,7 +41,17 @@ export default [
       nodeResolve(),
       json(),
       typescript(),
-      babel({ babelHelpers: 'bundled', exclude: "node_modules/**" }),
+      babel({ 
+        babelHelpers: 'bundled', 
+        include:  [ 
+          'src/**', 
+          'node_modules/lit/**',
+          'node_modules/lit-element/**',
+          'node_modules/lit-html/**', 
+          'node_modules/@lit/**', 
+          'node_modules/@lit-labs/**' 
+        ],
+      }),
       !dev && terser({ format: { comments: false } }),
     ],
   },
