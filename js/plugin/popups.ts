@@ -2,6 +2,7 @@ import { Unpromise } from "@watchable/unpromise";
 import {
   loadLoadCardHelpers,
   hass_base_el,
+  popupContentContainsIframe,
 } from "../helpers";
 import { BrowserModPopup } from "./popup-dialog";
 
@@ -158,45 +159,6 @@ export interface BrowserModPopupParams {
 }
 
 const customElementClassCache: Record<string, typeof BrowserModPopup> = {};
-const IFRAME_TYPE = "iframe";
-
-function isIframeType(value: unknown): boolean {
-  return typeof value === "string" && value.toLowerCase() === IFRAME_TYPE;
-}
-
-function popupContentContainsIframe(content: unknown): boolean {
-  if (content == null || content === false) return false;
-  if (content instanceof HTMLElement) {
-    if (isIframeType(content.tagName)) {
-      return true;
-    }
-    for (const child of content.children) {
-      if (popupContentContainsIframe(child)) {
-        return true;
-      }
-    }
-    return false;
-  }
-  if (typeof content === "string") {
-    return /<iframe[\s>]/i.test(content);
-  }
-  if (Array.isArray(content)) {
-    return content.some((item) => popupContentContainsIframe(item));
-  }
-  if (typeof content === "object" && !Array.isArray(content)) {
-    const objectContent = content as Record<string, unknown>;
-    if (isIframeType(objectContent.type)) {
-      return true;
-    }
-    for (const key of Object.keys(objectContent)) {
-      if (key === "type") continue;
-      if (popupContentContainsIframe(objectContent[key])) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
 
 export function setCustomElementClass(dialogTag: string): void {
   if (customElementClassCache[dialogTag]) {
