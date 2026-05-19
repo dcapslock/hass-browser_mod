@@ -158,11 +158,24 @@ export interface BrowserModPopupParams {
 }
 
 const customElementClassCache: Record<string, typeof BrowserModPopup> = {};
+const IFRAME_TYPE = "iframe";
+
+function isIframeType(value: unknown): boolean {
+  return typeof value === "string" && value.toLowerCase() === IFRAME_TYPE;
+}
 
 function popupContentContainsIframe(content: any): boolean {
-  if (!content) return false;
+  if (content == null || content === false) return false;
   if (content instanceof HTMLElement) {
-    return content.tagName.toLowerCase() === "iframe" || !!content.querySelector("iframe");
+    if (isIframeType(content.tagName)) {
+      return true;
+    }
+    for (const child of Array.from(content.children)) {
+      if (popupContentContainsIframe(child)) {
+        return true;
+      }
+    }
+    return false;
   }
   if (typeof content === "string") {
     return /<iframe[\s>]/i.test(content);
@@ -170,11 +183,15 @@ function popupContentContainsIframe(content: any): boolean {
   if (Array.isArray(content)) {
     return content.some((item) => popupContentContainsIframe(item));
   }
-  if (typeof content === "object") {
-    if (typeof content.type === "string" && content.type.toLowerCase() === "iframe") {
+  if (content !== null && typeof content === "object" && !Array.isArray(content)) {
+    if (isIframeType(content.type)) {
       return true;
     }
-    return Object.values(content).some((value) => popupContentContainsIframe(value));
+    for (const key of Object.keys(content)) {
+      if (popupContentContainsIframe(content[key])) {
+        return true;
+      }
+    }
   }
   return false;
 }
