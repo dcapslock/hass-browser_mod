@@ -159,6 +159,26 @@ export interface BrowserModPopupParams {
 
 const customElementClassCache: Record<string, typeof BrowserModPopup> = {};
 
+function popupContentContainsIframe(content: any): boolean {
+  if (!content) return false;
+  if (content instanceof HTMLElement) {
+    return content.tagName.toLowerCase() === "iframe" || !!content.querySelector("iframe");
+  }
+  if (typeof content === "string") {
+    return /<iframe[\s>]/i.test(content);
+  }
+  if (Array.isArray(content)) {
+    return content.some((item) => popupContentContainsIframe(item));
+  }
+  if (typeof content === "object") {
+    if (typeof content.type === "string" && content.type.toLowerCase() === "iframe") {
+      return true;
+    }
+    return Object.values(content).some((value) => popupContentContainsIframe(value));
+  }
+  return false;
+}
+
 export function setCustomElementClass(dialogTag: string): void {
   if (customElementClassCache[dialogTag]) {
     return;
@@ -181,12 +201,14 @@ export const showBrowserModPopup = (
   BrowserModPopupParams: BrowserModPopupParams
 ): void => {
   setCustomElementClass(dialogTag);
+  const addHistory = !popupContentContainsIframe(BrowserModPopupParams.content);
   element.dispatchEvent(
     new CustomEvent("show-dialog", {
       detail: {
         dialogTag,
         dialogImport: () => { return customElements.whenDefined(dialogTag) },
         dialogParams: BrowserModPopupParams,
+        addHistory,
       }
     })
   );
