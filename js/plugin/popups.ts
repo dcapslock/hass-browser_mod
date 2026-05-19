@@ -164,13 +164,13 @@ function isIframeType(value: unknown): boolean {
   return typeof value === "string" && value.toLowerCase() === IFRAME_TYPE;
 }
 
-function popupContentContainsIframe(content: any): boolean {
+function popupContentContainsIframe(content: unknown): boolean {
   if (content == null || content === false) return false;
   if (content instanceof HTMLElement) {
     if (isIframeType(content.tagName)) {
       return true;
     }
-    for (const child of Array.from(content.children)) {
+    for (const child of content.children) {
       if (popupContentContainsIframe(child)) {
         return true;
       }
@@ -183,12 +183,14 @@ function popupContentContainsIframe(content: any): boolean {
   if (Array.isArray(content)) {
     return content.some((item) => popupContentContainsIframe(item));
   }
-  if (content !== null && typeof content === "object" && !Array.isArray(content)) {
-    if (isIframeType(content.type)) {
+  if (typeof content === "object" && !Array.isArray(content)) {
+    const objectContent = content as Record<string, unknown>;
+    if (isIframeType(objectContent.type)) {
       return true;
     }
-    for (const key of Object.keys(content)) {
-      if (popupContentContainsIframe(content[key])) {
+    for (const key of Object.keys(objectContent)) {
+      if (key === "type") continue;
+      if (popupContentContainsIframe(objectContent[key])) {
         return true;
       }
     }
